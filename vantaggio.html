@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>Vantaggio · Lezioni di tennis</title>
+<meta name="theme-color" content="#103d36" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link id="manifest" rel="manifest" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23103d36'/%3E%3Ccircle cx='256' cy='256' r='140' fill='%23d4ed31'/%3E%3Cpath d='M138 160c60 38 60 134 0 192M374 160c-60 38-60 134 0 192' fill='none' stroke='%23103d36' stroke-width='14'/%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23d4ed31'/%3E%3Cpath d='M4 7c6 4 6 14 0 18M28 7c-6 4-6 14 0 18' fill='none' stroke='%23103d36' stroke-width='1.6'/%3E%3C/svg%3E" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+  --court:#103d36;       /* verde-teal campo */
+  --court-deep:#0a2a25;  /* ombra profonda */
+  --court-soft:#1b574d;  /* verde più chiaro */
+  --ball:#d4ed31;        /* giallo pallina */
+  --ball-deep:#bcd417;
+  --clay:#d8693b;        /* terra battuta - da pagare */
+  --clay-soft:#fbe9e0;
+  --paid:#1f9d6b;        /* verde - pagato */
+  --paid-soft:#e3f4ec;
+  --paper:#f2f4ef;       /* sfondo */
+  --card:#ffffff;
+  --ink:#14201d;
+  --ink-soft:#56635e;
+  --line:#e3e7e0;
+  --line-strong:#cfd6cd;
+  --radius:18px;
+  --radius-sm:12px;
+  --shadow:0 1px 2px rgba(16,61,54,.05), 0 8px 24px -12px rgba(16,61,54,.18);
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:16px}
+.archivo{font-family:'Archivo',sans-serif}
+.tnum{font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
+
+/* ---------- court-line motif ---------- */
+.court-lines{position:absolute;inset:0;pointer-events:none;opacity:.5}
+.court-lines i{position:absolute;background:rgba(255,255,255,.16)}
+
+/* ========================================================= LOGIN */
+#login{
+  position:fixed;inset:0;z-index:50;
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--court-soft) 0%, var(--court) 45%, var(--court-deep) 100%);
+  color:#fff;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:32px 26px calc(40px + var(--safe-bottom));
+  overflow:hidden;
+}
+#login .court{
+  position:absolute;top:-6%;left:50%;transform:translateX(-50%);
+  width:min(560px,130%);aspect-ratio:1.1/1;
+  border:2px solid rgba(255,255,255,.14);border-radius:8px;
+  opacity:.55;
+}
+#login .court::before,#login .court::after{content:"";position:absolute;background:rgba(255,255,255,.14)}
+#login .court::before{left:0;right:0;top:50%;height:2px}
+#login .court::after{top:0;bottom:0;left:50%;width:2px}
+.login-inner{position:relative;width:100%;max-width:380px;text-align:center}
+.brandball{
+  width:60px;height:60px;border-radius:50%;margin:0 auto 22px;
+  background:var(--ball);position:relative;
+  box-shadow:0 10px 30px -8px rgba(212,237,49,.6);
+}
+.brandball::before,.brandball::after{
+  content:"";position:absolute;top:6px;bottom:6px;width:38px;
+  border:2.4px solid var(--court);border-radius:50%;
+}
+.brandball::before{left:-12px}
+.brandball::after{right:-12px}
+.wordmark{font-family:'Archivo';font-weight:900;font-size:46px;letter-spacing:-.02em;line-height:1}
+.tagline{margin-top:10px;color:rgba(255,255,255,.62);font-size:14.5px;font-weight:500}
+.login-card{
+  margin-top:38px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);
+  padding:22px 20px;backdrop-filter:blur(8px);text-align:left;
+}
+.login-card label{font-size:12.5px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.04em}
+.pwfield{position:relative;margin-top:9px}
+.pwfield input{
+  width:100%;padding:15px 48px 15px 16px;border-radius:13px;
+  background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.16);
+  color:#fff;font-weight:600;letter-spacing:.02em;
+}
+.pwfield input::placeholder{color:rgba(255,255,255,.4);font-weight:400}
+.pwfield input:focus{outline:none;border-color:var(--ball);background:rgba(255,255,255,.14)}
+.pweye{position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:10px;color:rgba(255,255,255,.65)}
+.btn-enter{
+  width:100%;margin-top:16px;padding:15px;border-radius:13px;
+  background:var(--ball);color:var(--court-deep);
+  font-family:'Archivo';font-weight:800;font-size:16px;letter-spacing:.01em;
+  transition:transform .12s ease, filter .12s ease;
+}
+.btn-enter:active{transform:scale(.98);filter:brightness(.96)}
+.btn-enter:disabled{opacity:.6}
+.login-err{margin-top:14px;color:#ffd2c2;font-size:13.5px;text-align:center;min-height:18px;font-weight:500}
+.setup-note{
+  margin-top:20px;font-size:12.5px;color:rgba(255,255,255,.6);text-align:center;
+  background:rgba(216,105,59,.18);border:1px solid rgba(216,105,59,.35);
+  padding:10px 14px;border-radius:12px;line-height:1.5;
+}
+
+/* ========================================================= APP SHELL */
+#app{display:none;flex-direction:column;min-height:100%}
+.appbar{
+  position:sticky;top:0;z-index:20;
+  background:var(--court);color:#fff;
+  padding:calc(var(--safe-top) + 14px) 20px 16px;
+  border-radius:0 0 22px 22px;position:relative;overflow:hidden;
+}
+.appbar .court-lines i:nth-child(1){left:18%;top:0;bottom:0;width:1.5px}
+.appbar .court-lines i:nth-child(2){left:50%;top:0;bottom:0;width:1.5px}
+.appbar .court-lines i:nth-child(3){left:82%;top:0;bottom:0;width:1.5px}
+.appbar .court-lines i:nth-child(4){left:0;right:0;top:50%;height:1.5px}
+.appbar-row{display:flex;align-items:center;justify-content:space-between;position:relative}
+.appbar h1{font-family:'Archivo';font-weight:800;font-size:21px;letter-spacing:-.01em}
+.appbar .ball-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ball);margin-right:8px;vertical-align:middle}
+.coach-chip{font-size:12.5px;font-weight:600;color:rgba(255,255,255,.7);background:rgba(255,255,255,.1);padding:7px 12px;border-radius:20px}
+.view-sub{position:relative;margin-top:3px;color:rgba(255,255,255,.6);font-size:13px;font-weight:500}
+
+main{flex:1;padding:18px 16px 100px;max-width:560px;margin:0 auto;width:100%}
+.view{display:none}
+.view.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- bottom nav ---------- */
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:30;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  padding:8px 8px calc(8px + var(--safe-bottom));
+  display:flex;justify-content:space-around;max-width:560px;margin:0 auto;
+}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0;border-radius:12px;color:var(--ink-soft);transition:color .15s}
+.tab svg{width:23px;height:23px;stroke-width:2}
+.tab span{font-size:10.5px;font-weight:600;letter-spacing:.01em}
+.tab.active{color:var(--court)}
+.tab.active svg{stroke-width:2.4}
+
+/* ---------- generic cards / buttons ---------- */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line)}
+.section-title{font-family:'Archivo';font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:0 4px 10px}
+.fab{
+  position:fixed;right:18px;bottom:calc(78px + var(--safe-bottom));z-index:25;
+  width:58px;height:58px;border-radius:20px;background:var(--ball);color:var(--court-deep);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px -6px rgba(188,212,23,.6);transition:transform .12s;
+}
+.fab:active{transform:scale(.93)}
+.fab svg{width:26px;height:26px;stroke-width:2.6}
+.empty{text-align:center;padding:46px 20px;color:var(--ink-soft)}
+.empty .ico{width:54px;height:54px;border-radius:50%;background:var(--paper);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:1px solid var(--line)}
+.empty p{font-size:14.5px;line-height:1.5;max-width:240px;margin:0 auto}
+.empty b{color:var(--ink);font-weight:600}
+
+/* ========================================================= CALENDAR */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 2px}
+.cal-month{font-family:'Archivo';font-weight:800;font-size:20px;text-transform:capitalize}
+.cal-nav{display:flex;gap:8px}
+.cal-nav button{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--court);box-shadow:var(--shadow)}
+.cal-nav button:active{background:var(--paper)}
+.cal-today-btn{font-size:13px;font-weight:600;color:var(--court);padding:0 10px}
+.cal-grid{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden}
+.cal-wd{display:grid;grid-template-columns:repeat(7,1fr);background:var(--court);color:rgba(255,255,255,.78)}
+.cal-wd div{text-align:center;padding:10px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{
+  aspect-ratio:1/1.05;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding-top:8px;gap:4px;position:relative;transition:background .12s;
+}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell.out{color:var(--line-strong);background:#fafbf9}
+.cal-cell .num{font-size:14px;font-weight:600;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cal-cell.today .num{background:var(--ball);color:var(--court-deep);font-weight:800}
+.cal-cell.sel .num{box-shadow:0 0 0 2px var(--court)}
+.cal-dots{display:flex;gap:3px;height:6px}
+.cal-dots i{width:5px;height:5px;border-radius:50%}
+.dot-paid{background:var(--paid)}
+.dot-unpaid{background:var(--clay)}
+.cal-cell .cnt{position:absolute;top:6px;right:7px;font-size:9.5px;font-weight:700;color:var(--court-soft)}
+.cal-legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:11.5px;color:var(--ink-soft)}
+.cal-legend span{display:flex;align-items:center;gap:5px}
+.cal-legend i{width:7px;height:7px;border-radius:50%}
+
+/* ---------- day sheet (bottom) ---------- */
+.sheet-back{position:fixed;inset:0;z-index:40;background:rgba(10,42,37,.42);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet-back.show{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:560px;margin:0 auto;
+  background:var(--paper);border-radius:24px 24px 0 0;
+  transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);
+  max-height:86vh;display:flex;flex-direction:column;
+  padding-bottom:calc(16px + var(--safe-bottom));
+}
+.sheet.show{transform:translateY(0)}
+.sheet-grip{width:38px;height:4px;border-radius:4px;background:var(--line-strong);margin:10px auto 4px}
+.sheet-head{padding:6px 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.sheet-head h3{font-family:'Archivo';font-weight:800;font-size:18px;text-transform:capitalize}
+.sheet-head .d-sub{font-size:12.5px;color:var(--ink-soft);font-weight:500;margin-top:2px}
+.sheet-body{overflow-y:auto;padding:0 16px 8px}
+.sheet-add{margin:8px 16px 0}
+
+/* ---------- lesson row ---------- */
+.lesson{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px 14px;margin-bottom:9px;box-shadow:var(--shadow)}
+.lesson .time{font-family:'Archivo';font-weight:800;font-size:16px;text-align:center;min-width:52px;line-height:1.1}
+.lesson .time small{display:block;font-family:'Inter';font-weight:500;font-size:10.5px;color:var(--ink-soft);margin-top:2px}
+.lesson .info{flex:1;min-width:0}
+.lesson .info .name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lesson .info .meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+.lesson .info .note{font-size:12px;color:var(--ink-soft);margin-top:3px;font-style:italic;opacity:.85}
+.pay-pill{font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:20px;white-space:nowrap;transition:transform .1s}
+.pay-pill:active{transform:scale(.95)}
+.pay-pill.no{background:var(--clay-soft);color:var(--clay)}
+.pay-pill.yes{background:var(--paid-soft);color:var(--paid)}
+.lesson-divider{height:1px;background:var(--court);width:18px;margin-left:69px;margin-bottom:9px;opacity:.12}
+
+/* ========================================================= PAYMENTS */
+.kpi-clay{background:linear-gradient(135deg,var(--clay) 0%,#c2552c 100%);color:#fff;border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden;box-shadow:0 10px 26px -10px rgba(216,105,59,.5);margin-bottom:8px}
+.kpi-clay .court-lines i:nth-child(1){left:0;right:0;bottom:0;height:60%;border-top:1.5px solid rgba(255,255,255,.2);background:none}
+.kpi-clay .lab{font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;opacity:.85;position:relative}
+.kpi-clay .big{font-family:'Archivo';font-weight:900;font-size:40px;margin-top:4px;position:relative;letter-spacing:-.01em}
+.kpi-clay .sub{font-size:13px;opacity:.85;margin-top:2px;position:relative}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;margin:16px 0 14px;box-shadow:var(--shadow)}
+.seg button{flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:600;color:var(--ink-soft);transition:.15s}
+.seg button.on{background:var(--court);color:#fff}
+.pay-group-title{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin:16px 4px 8px;text-transform:capitalize}
+
+/* ========================================================= RECAP */
+.recap-month{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.recap-month .m{font-family:'Archivo';font-weight:800;font-size:19px;text-transform:capitalize}
+.recap-month button{width:36px;height:36px;border-radius:11px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--court);box-shadow:var(--shadow)}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.kpi.dark{background:var(--court);border-color:var(--court);color:#fff;position:relative;overflow:hidden}
+.kpi.dark .court-lines i:nth-child(1){left:60%;top:0;bottom:0;width:1.5px}
+.kpi.dark .court-lines i:nth-child(2){left:0;right:0;top:62%;height:1.5px}
+.kpi .lab{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);position:relative}
+.kpi.dark .lab{color:rgba(255,255,255,.65)}
+.kpi .val{font-family:'Archivo';font-weight:900;font-size:30px;margin-top:5px;line-height:1;position:relative;letter-spacing:-.01em}
+.kpi .val .cur{font-size:18px;font-weight:700;opacity:.6;margin-right:1px}
+.kpi .vsub{font-size:12px;color:var(--ink-soft);margin-top:5px;position:relative}
+.kpi.dark .vsub{color:rgba(255,255,255,.7)}
+.kpi .accent{color:var(--ball)}
+
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px 12px;box-shadow:var(--shadow);margin-top:16px}
+.chart-card h4{font-family:'Archivo';font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:18px}
+.bars{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:130px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end}
+.bar-track{width:100%;display:flex;align-items:flex-end;justify-content:center;flex:1}
+.bar{width:62%;max-width:30px;border-radius:7px 7px 3px 3px;background:linear-gradient(var(--court-soft),var(--court));min-height:3px;transition:height .5s cubic-bezier(.2,.8,.2,1);position:relative}
+.bar.cur{background:linear-gradient(var(--ball),var(--ball-deep))}
+.bar-val{font-size:10px;font-weight:700;color:var(--ink-soft)}
+.bar-lab{font-size:10.5px;font-weight:600;color:var(--ink-soft);text-transform:capitalize}
+
+.student-row{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.student-row:last-child{border-bottom:none}
+.student-row .av{width:38px;height:38px;border-radius:12px;background:var(--court);color:var(--ball);display:flex;align-items:center;justify-content:center;font-family:'Archivo';font-weight:800;font-size:15px;flex-shrink:0}
+.student-row .sname{flex:1;font-weight:600;font-size:14.5px}
+.student-row .scnt{font-size:12px;color:var(--ink-soft)}
+.student-row .stot{font-family:'Archivo';font-weight:800;font-size:15px}
+
+/* ========================================================= SETTINGS */
+.set-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.set-card h4{font-family:'Archivo';font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);padding:16px 18px 0}
+.field{padding:14px 18px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:var(--ink)}
+.field input{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);font-weight:500}
+.field input:focus{outline:none;border-color:var(--court);background:#fff}
+.field .hint{font-size:11.5px;color:var(--ink-soft);margin-top:6px;line-height:1.45}
+.field.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field.row2 > div{display:flex;flex-direction:column}
+.btn-primary{width:calc(100% - 36px);margin:4px 18px 16px;padding:14px;border-radius:13px;background:var(--court);color:#fff;font-family:'Archivo';font-weight:800;font-size:15px;transition:.12s}
+.btn-primary:active{transform:scale(.99);background:var(--court-deep)}
+.btn-primary:disabled{opacity:.5}
+.btn-ghost{width:100%;padding:15px;border-radius:14px;border:1.5px solid var(--clay);color:var(--clay);font-weight:700;font-size:15px;background:var(--card);box-shadow:var(--shadow)}
+.btn-ghost:active{background:var(--clay-soft)}
+.set-msg{font-size:13px;font-weight:600;padding:0 18px 14px;min-height:0}
+.set-msg.ok{color:var(--paid)}
+.set-msg.err{color:var(--clay)}
+.about{text-align:center;color:var(--ink-soft);font-size:12px;padding:8px 0 4px;line-height:1.6}
+.about b{font-family:'Archivo';color:var(--court)}
+
+/* ========================================================= MODAL (lesson form) */
+.modal-back{position:fixed;inset:0;z-index:60;background:rgba(10,42,37,.46);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .2s;display:flex;align-items:flex-end;justify-content:center}
+.modal-back.show{opacity:1;pointer-events:auto}
+.modal{
+  width:100%;max-width:560px;background:var(--paper);border-radius:24px 24px 0 0;
+  transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);
+  max-height:92vh;overflow-y:auto;padding-bottom:calc(20px + var(--safe-bottom));
+}
+.modal-back.show .modal{transform:translateY(0)}
+.modal-grip{width:38px;height:4px;border-radius:4px;background:var(--line-strong);margin:10px auto 0}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 4px}
+.modal-head h3{font-family:'Archivo';font-weight:800;font-size:19px}
+.modal-x{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-soft)}
+.modal-body{padding:8px 20px 0}
+.mf{margin-bottom:14px}
+.mf label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;margin-bottom:7px}
+.mf input,.mf textarea,.mf select{width:100%;padding:14px;border-radius:13px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:500}
+.mf input:focus,.mf textarea:focus,.mf select:focus{outline:none;border-color:var(--court)}
+.mf textarea{resize:none;min-height:60px}
+.mf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mf-row3{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toggle-paid{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:14px}
+.toggle-paid span{font-weight:600;font-size:14.5px}
+.switch{width:52px;height:30px;border-radius:30px;background:var(--line-strong);position:relative;transition:background .2s;flex-shrink:0}
+.switch.on{background:var(--paid)}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch.on::after{transform:translateX(22px)}
+.modal-actions{padding:6px 20px 0;display:flex;gap:10px}
+.modal-actions .save{flex:1;padding:15px;border-radius:14px;background:var(--ball);color:var(--court-deep);font-family:'Archivo';font-weight:800;font-size:16px;transition:.12s}
+.modal-actions .save:active{transform:scale(.99)}
+.modal-actions .del{width:54px;border-radius:14px;background:var(--clay-soft);color:var(--clay);display:flex;align-items:center;justify-content:center}
+.recurring-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);margin:-4px 2px 14px}
+.recurring-row input{width:auto}
+
+/* toast */
+.toast{position:fixed;bottom:calc(92px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);z-index:70;background:var(--court-deep);color:#fff;padding:12px 20px;border-radius:30px;font-size:13.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (min-width:480px){
+  .cal-cell .num{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================= LOGIN ============================= -->
+<div id="login">
+  <div class="court"></div>
+  <div class="login-inner">
+    <div class="brandball"></div>
+    <div class="wordmark">Vantaggio</div>
+    <div class="tagline">Le tue lezioni di tennis, sotto controllo</div>
+
+    <div class="login-card">
+      <label for="pw">Password</label>
+      <div class="pwfield">
+        <input id="pw" type="password" placeholder="••••••••" autocomplete="current-password" inputmode="text" />
+        <button class="pweye" id="pweye" type="button" aria-label="Mostra password">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <button class="btn-enter" id="btnEnter">Entra in campo</button>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="setup-note" id="firstHint" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:rgba(255,255,255,.72)">
+      🎾 Al primo accesso scegli una password (min. 6 caratteri): diventerà la tua per entrare. Potrai cambiarla nelle impostazioni.
+    </div>
+  </div>
+</div>
+
+<!-- ============================= APP ============================= -->
+<div id="app">
+  <header class="appbar">
+    <div class="court-lines"><i></i><i></i><i></i><i></i></div>
+    <div class="appbar-row">
+      <h1><span class="ball-dot"></span><span id="barTitle">Calendario</span></h1>
+      <div class="coach-chip" id="coachChip">Coach</div>
+    </div>
+    <div class="view-sub" id="barSub">Le tue lezioni in programma</div>
+  </header>
+
+  <main>
+    <!-- ---------- CALENDARIO ---------- -->
+    <section class="view active" id="v-cal">
+      <div class="cal-head">
+        <div class="cal-month" id="calMonth">—</div>
+        <div class="cal-nav">
+          <button id="calToday" class="cal-today-btn">Oggi</button>
+          <button id="calPrev" aria-label="Mese precedente"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg></button>
+          <button id="calNext" aria-label="Mese successivo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg></button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-wd"><div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div></div>
+        <div class="cal-days" id="calDays"></div>
+      </div>
+      <div class="cal-legend">
+        <span><i class="dot-paid"></i> Pagata</span>
+        <span><i class="dot-unpaid"></i> Da pagare</span>
+        <span><i style="background:var(--ball)"></i> Oggi</span>
+      </div>
+      <div id="calUpcoming"></div>
+    </section>
+
+    <!-- ---------- PAGAMENTI ---------- -->
+    <section class="view" id="v-pay">
+      <div class="kpi-clay">
+        <div class="court-lines"><i></i></div>
+        <div class="lab">Ancora da incassare</div>
+        <div class="big tnum" id="payOutstanding">€0</div>
+        <div class="sub" id="payOutSub">Nessuna lezione in sospeso</div>
+      </div>
+      <div class="seg">
+        <button data-pf="no" class="on">Da pagare</button>
+        <button data-pf="yes">Pagate</button>
+        <button data-pf="all">Tutte</button>
+      </div>
+      <div id="payList"></div>
+    </section>
+
+    <!-- ---------- RESOCONTO ---------- -->
+    <section class="view" id="v-recap">
+      <div class="recap-month">
+        <button id="recPrev" aria-label="Mese precedente"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="m" id="recMonth">—</div>
+        <button id="recNext" aria-label="Mese successivo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg></button>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi dark">
+          <div class="court-lines"><i></i><i></i></div>
+          <div class="lab">Incassato</div>
+          <div class="val tnum"><span class="cur">€</span><span id="recIncassato">0</span></div>
+          <div class="vsub">su <span id="recTotale">€0</span> totali</div>
+        </div>
+        <div class="kpi">
+          <div class="lab">Lezioni</div>
+          <div class="val tnum" id="recLezioni">0</div>
+          <div class="vsub"><span id="recOre">0</span> ore in campo</div>
+        </div>
+        <div class="kpi">
+          <div class="lab">Da incassare</div>
+          <div class="val tnum" style="color:var(--clay)"><span class="cur" style="color:var(--clay);opacity:.6">€</span><span id="recDaIncassare">0</span></div>
+          <div class="vsub"><span id="recDaPagareN">0</span> lezioni in sospeso</div>
+        </div>
+        <div class="kpi">
+          <div class="lab">Media a lezione</div>
+          <div class="val tnum"><span class="cur">€</span><span id="recMedia">0</span></div>
+          <div class="vsub"><span id="recAllievi">0</span> allievi diversi</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Incassi ultimi 6 mesi</h4>
+        <div class="bars" id="recBars"></div>
+      </div>
+
+      <div class="chart-card" id="recStudentsCard">
+        <h4>Allievi del mese</h4>
+        <div id="recStudents"></div>
+      </div>
+    </section>
+
+    <!-- ---------- IMPOSTAZIONI ---------- -->
+    <section class="view" id="v-set">
+      <div class="set-card">
+        <h4>Profilo</h4>
+        <div class="field">
+          <label for="setCoach">Nome del coach</label>
+          <input id="setCoach" type="text" placeholder="Paolo" />
+        </div>
+        <div class="field row2">
+          <div>
+            <label for="setPrice">Prezzo predefinito</label>
+            <input id="setPrice" type="number" inputmode="decimal" placeholder="35" />
+          </div>
+          <div>
+            <label for="setDur">Durata (min)</label>
+            <input id="setDur" type="number" inputmode="numeric" placeholder="60" />
+          </div>
+        </div>
+        <div class="field" style="padding-top:0">
+          <div class="hint">Questi valori vengono proposti in automatico quando crei una nuova lezione.</div>
+        </div>
+        <button class="btn-primary" id="saveProfile">Salva profilo</button>
+        <div class="set-msg" id="profileMsg"></div>
+      </div>
+
+      <div class="set-card">
+        <h4>Cambia password</h4>
+        <div class="field">
+          <label for="curPw">Password attuale</label>
+          <input id="curPw" type="password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <div class="field">
+          <label for="newPw">Nuova password</label>
+          <input id="newPw" type="password" autocomplete="new-password" placeholder="Almeno 6 caratteri" />
+          <div class="hint">Usa almeno 6 caratteri. Te la chiederà a ogni accesso.</div>
+        </div>
+        <button class="btn-primary" id="changePw">Aggiorna password</button>
+        <div class="set-msg" id="pwMsg"></div>
+      </div>
+
+      <div style="padding:0 2px">
+        <button class="btn-ghost" id="logout">Esci dall'account</button>
+      </div>
+      <div class="about">
+        <b>Vantaggio</b> · Gestione lezioni di tennis<br>
+        Fatto per Paolo 🎾
+      </div>
+    </section>
+  </main>
+
+  <!-- FAB -->
+  <button class="fab" id="fab" aria-label="Nuova lezione">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+
+  <!-- bottom nav -->
+  <nav class="tabbar">
+    <button class="tab active" data-view="cal" data-title="Calendario" data-sub="Le tue lezioni in programma">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+      <span>Calendario</span>
+    </button>
+    <button class="tab" data-view="pay" data-title="Pagamenti" data-sub="Chi ha pagato e chi no">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/></svg>
+      <span>Pagamenti</span>
+    </button>
+    <button class="tab" data-view="recap" data-title="Resoconto" data-sub="I numeri del tuo mese">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+      <span>Resoconto</span>
+    </button>
+    <button class="tab" data-view="set" data-title="Impostazioni" data-sub="Account e preferenze">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7.7 1.6 1.6 0 0 0-1 1.5V22a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H2a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V2a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H22a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+      <span>Impostazioni</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ============================= DAY SHEET ============================= -->
+<div class="sheet-back" id="sheetBack"></div>
+<div class="sheet" id="daySheet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-head">
+    <div>
+      <h3 id="sheetTitle">—</h3>
+      <div class="d-sub" id="sheetSub"></div>
+    </div>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+  <button class="btn-primary sheet-add" id="sheetAdd" style="width:auto;margin:8px 16px 0">+ Aggiungi lezione</button>
+</div>
+
+<!-- ============================= LESSON MODAL ============================= -->
+<div class="modal-back" id="modalBack">
+  <div class="modal" id="lessonModal">
+    <div class="modal-grip"></div>
+    <div class="modal-head">
+      <h3 id="modalTitle">Nuova lezione</h3>
+      <button class="modal-x" id="modalClose">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="mf">
+        <label>Allievo</label>
+        <input id="fAllievo" type="text" list="studentList" placeholder="Nome e cognome" autocomplete="off" />
+        <datalist id="studentList"></datalist>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>Data</label><input id="fData" type="date" /></div>
+        <div class="mf"><label>Ora</label><input id="fOra" type="time" step="300" /></div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>Prezzo (€)</label><input id="fPrezzo" type="number" inputmode="decimal" placeholder="35" /></div>
+        <div class="mf"><label>Durata (min)</label><input id="fDurata" type="number" inputmode="numeric" placeholder="60" /></div>
+      </div>
+      <div class="mf">
+        <label>Note <span style="text-transform:none;font-weight:400">(facoltativo)</span></label>
+        <textarea id="fNote" placeholder="Es. lavorare sul rovescio, campo 3..."></textarea>
+      </div>
+      <div class="recurring-row" id="recurringRow">
+        <input type="checkbox" id="fRicorrente" />
+        <label for="fRicorrente" style="margin:0;cursor:pointer">Ripeti ogni settimana</label>
+        <select id="fRicorrenteN" style="margin-left:auto;width:auto;padding:8px 10px;border-radius:9px;border:1.5px solid var(--line);background:var(--card)">
+          <option value="4">per 4 settimane</option>
+          <option value="8">per 8 settimane</option>
+          <option value="12">per 12 settimane</option>
+        </select>
+      </div>
+      <div class="mf">
+        <div class="toggle-paid" id="paidToggle">
+          <span id="paidLabel">Da pagare</span>
+          <div class="switch" id="paidSwitch"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="del hidden" id="modalDelete" aria-label="Elimina">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>
+      <button class="save" id="modalSave">Salva lezione</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =================================================================
+   Firebase — dati salvati e sincronizzati online
+   ================================================================= */
+const firebaseConfig = {
+  apiKey:            "AIzaSyAdXFmRkgHGcDOR2gr4bUoJCl23PnyqM6g",
+  authDomain:        "project-vantaggio.firebaseapp.com",
+  projectId:         "project-vantaggio",
+  storageBucket:     "project-vantaggio.firebasestorage.app",
+  messagingSenderId: "605638060898",
+  appId:             "1:605638060898:web:1a1ed0c651ce4d04209a3b"
+};
+
+// Account unico "nascosto": Paolo userà solo la password.
+const COACH_EMAIL = "coach@vantaggio.app";
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+db.enablePersistence({synchronizeTabs:true}).catch(()=>{}); // funziona anche offline a bordo campo
+
+/* manifest "Aggiungi alla Home" generato al volo (resta tutto in un file) */
+(function(){
+  try{
+    const m={name:"Vantaggio - Lezioni di tennis",short_name:"Vantaggio",start_url:".",display:"standalone",orientation:"portrait",background_color:"#103d36",theme_color:"#103d36",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23103d36'/%3E%3Ccircle cx='256' cy='256' r='140' fill='%23d4ed31'/%3E%3Cpath d='M138 160c60 38 60 134 0 192M374 160c-60 38-60 134 0 192' fill='none' stroke='%23103d36' stroke-width='14'/%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml",purpose:"any"}]};
+    const link=document.getElementById("manifest");
+    if(link) link.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/json"}));
+  }catch(e){}
+})();
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+const MESI_BR = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+const GIORNI = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+
+function pad(n){return String(n).padStart(2,"0")}
+function ymd(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function eur(n){
+  const v = Math.round(n);
+  return "€"+v.toLocaleString("it-IT");
+}
+function eurNum(n){return Math.round(n).toLocaleString("it-IT")}
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1900);
+}
+
+/* ---------- state ---------- */
+let lezioni = [];           // {id, allievo, data, ora, durata, prezzo, pagato, note}
+let config = {nomeCoach:"Paolo", prezzoDefault:35, durataDefault:60};
+let calRef = new Date();    // mese visualizzato nel calendario
+let selDay = null;          // giorno selezionato (ymd)
+let recRef = new Date();    // mese del resoconto
+let payFilter = "no";
+let editingId = null;       // id lezione in modifica (null = nuova)
+let modalPaid = false;
+
+/* =================================================================
+   ACCESSO (solo password; al primo avvio crea l'account)
+   ================================================================= */
+function showLoginError(msg){ $("loginErr").textContent = msg; }
+
+async function doLogin(){
+  const pw=$("pw").value.trim();
+  if(!pw){ showLoginError("Inserisci la password"); return; }
+  const btn=$("btnEnter"); btn.disabled=true; btn.textContent="Accesso…";
+  showLoginError("");
+  try{
+    await auth.signInWithEmailAndPassword(COACH_EMAIL, pw);
+    // onAuthStateChanged porta dentro l'app
+  }catch(e){
+    const maybeFirst = (e.code==="auth/invalid-credential"||e.code==="auth/user-not-found"||e.code==="auth/wrong-password"||e.code==="auth/invalid-login-credentials");
+    if(maybeFirst){
+      try{
+        await auth.createUserWithEmailAndPassword(COACH_EMAIL, pw); // primo accesso: crea l'account
+      }catch(e2){
+        btn.disabled=false; btn.textContent="Entra in campo";
+        if(e2.code==="auth/email-already-in-use") showLoginError("Password errata. Riprova.");
+        else if(e2.code==="auth/weak-password") showLoginError("Al primo accesso usa almeno 6 caratteri.");
+        else if(e2.code==="auth/operation-not-allowed") showLoginError("Attiva Email/Password in Firebase → Authentication.");
+        else if(e2.code==="auth/network-request-failed") showLoginError("Connessione assente. Controlla internet.");
+        else showLoginError("Errore: "+e2.message);
+      }
+    }
+    else if(e.code==="auth/too-many-requests"){ btn.disabled=false; btn.textContent="Entra in campo"; showLoginError("Troppi tentativi. Attendi qualche minuto."); }
+    else if(e.code==="auth/network-request-failed"){ btn.disabled=false; btn.textContent="Entra in campo"; showLoginError("Connessione assente. Controlla internet."); }
+    else { btn.disabled=false; btn.textContent="Entra in campo"; showLoginError("Errore: "+e.message); }
+  }
+}
+
+$("btnEnter").onclick = doLogin;
+$("pw").addEventListener("keydown",e=>{ if(e.key==="Enter") doLogin(); });
+$("pweye").onclick = ()=>{ const i=$("pw"); i.type = i.type==="password" ? "text" : "password"; };
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    $("pw").value=""; showLoginError("");
+    $("login").style.display="none";
+    $("app").style.display="flex";
+    $("btnEnter").disabled=false; $("btnEnter").textContent="Entra in campo";
+    startData();
+  }else{
+    $("login").style.display="flex";
+    $("app").style.display="none";
+  }
+});
+
+/* =================================================================
+   DATI (Firestore realtime)
+   ================================================================= */
+let dataStarted=false;
+function startData(){
+  if(dataStarted) return; dataStarted=true;
+
+  // config
+  db.collection("impostazioni").doc("generali").onSnapshot(doc=>{
+    if(doc.exists){ config = Object.assign(config, doc.data()); }
+    applyConfig();
+  });
+
+  // lezioni
+  db.collection("lezioni").onSnapshot(snap=>{
+    lezioni = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+    lezioni.sort((a,b)=> (a.data+a.ora).localeCompare(b.data+b.ora));
+    renderAll();
+  }, err=>{
+    toast("Errore di connessione ai dati");
+    console.error(err);
+  });
+}
+
+function applyConfig(){
+  $("coachChip").textContent = config.nomeCoach || "Coach";
+  $("setCoach").value = config.nomeCoach || "";
+  $("setPrice").value = config.prezzoDefault ?? "";
+  $("setDur").value = config.durataDefault ?? "";
+}
+
+function renderAll(){
+  renderCalendar();
+  renderPayments();
+  renderRecap();
+  refreshStudentList();
+  if(selDay) renderDaySheet(selDay); // aggiorna sheet se aperto
+}
+
+/* =================================================================
+   NAVIGAZIONE TAB
+   ================================================================= */
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    tab.classList.add("active");
+    $("v-"+tab.dataset.view).classList.add("active");
+    $("barTitle").textContent = tab.dataset.title;
+    $("barSub").textContent = tab.dataset.sub;
+    $("fab").style.display = (tab.dataset.view==="cal"||tab.dataset.view==="pay") ? "flex":"none";
+    window.scrollTo(0,0);
+  };
+});
+
+/* =================================================================
+   CALENDARIO
+   ================================================================= */
+$("calPrev").onclick=()=>{ calRef.setMonth(calRef.getMonth()-1); renderCalendar(); };
+$("calNext").onclick=()=>{ calRef.setMonth(calRef.getMonth()+1); renderCalendar(); };
+$("calToday").onclick=()=>{ calRef=new Date(); renderCalendar(); openDay(ymd(new Date())); };
+
+function lessonsByDay(){
+  const map={};
+  lezioni.forEach(l=>{ (map[l.data]=map[l.data]||[]).push(l); });
+  return map;
+}
+
+function renderCalendar(){
+  $("calMonth").textContent = MESI[calRef.getMonth()]+" "+calRef.getFullYear();
+  const year=calRef.getFullYear(), month=calRef.getMonth();
+  const first=new Date(year,month,1);
+  let startIdx=(first.getDay()+6)%7; // lunedì = 0
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const prevDays=new Date(year,month,0).getDate();
+  const todayStr=ymd(new Date());
+  const byDay=lessonsByDay();
+  const grid=$("calDays"); grid.innerHTML="";
+
+  const total=Math.ceil((startIdx+daysInMonth)/7)*7;
+  for(let i=0;i<total;i++){
+    const cell=document.createElement("button");
+    cell.className="cal-cell";
+    let dayNum, dateObj, out=false;
+    if(i<startIdx){ dayNum=prevDays-startIdx+1+i; dateObj=new Date(year,month-1,dayNum); out=true; }
+    else if(i>=startIdx+daysInMonth){ dayNum=i-startIdx-daysInMonth+1; dateObj=new Date(year,month+1,dayNum); out=true; }
+    else { dayNum=i-startIdx+1; dateObj=new Date(year,month,dayNum); }
+    const ds=ymd(dateObj);
+    if(out) cell.classList.add("out");
+    if(ds===todayStr) cell.classList.add("today");
+    if(ds===selDay) cell.classList.add("sel");
+
+    const dayL=byDay[ds]||[];
+    let dotsHtml="";
+    if(dayL.length){
+      const hasUnpaid=dayL.some(l=>!l.pagato);
+      const hasPaid=dayL.some(l=>l.pagato);
+      if(hasPaid) dotsHtml+='<i class="dot-paid"></i>';
+      if(hasUnpaid) dotsHtml+='<i class="dot-unpaid"></i>';
+    }
+    cell.innerHTML =
+      (dayL.length>1?`<span class="cnt">${dayL.length}</span>`:"")+
+      `<span class="num">${dayNum}</span>`+
+      `<span class="cal-dots">${dotsHtml}</span>`;
+    cell.onclick=()=>openDay(ds);
+    grid.appendChild(cell);
+  }
+  renderUpcoming();
+}
+
+function renderUpcoming(){
+  const cont=$("calUpcoming"); if(!cont) return;
+  const todayStr=ymd(new Date());
+  const next=lezioni.filter(l=>l.data>=todayStr).slice(0,4);
+  if(!next.length){
+    cont.innerHTML=`<div class="empty"><div class="ico">🎾</div><p>Nessuna lezione in programma.<br>Tocca <b>+</b> per aggiungerne una.</p></div>`;
+    return;
+  }
+  let html=`<div class="section-title" style="margin-top:22px">Prossime lezioni</div>`;
+  html+=next.map(l=>lessonRowHtml(l,true)).join("");
+  cont.innerHTML=html;
+  bindLessonRows(cont);
+}
+
+function openDay(ds){
+  selDay=ds;
+  renderCalendar();
+  renderDaySheet(ds);
+  $("sheetBack").classList.add("show");
+  $("daySheet").classList.add("show");
+}
+function closeSheet(){
+  $("sheetBack").classList.remove("show");
+  $("daySheet").classList.remove("show");
+  selDay=null; renderCalendar();
+}
+$("sheetBack").onclick=closeSheet;
+
+function renderDaySheet(ds){
+  const [y,m,d]=ds.split("-").map(Number);
+  const dateObj=new Date(y,m-1,d);
+  $("sheetTitle").textContent = d+" "+MESI[m-1];
+  const dayL=lezioni.filter(l=>l.data===ds);
+  const tot=dayL.reduce((s,l)=>s+(+l.prezzo||0),0);
+  $("sheetSub").textContent = GIORNI[dateObj.getDay()].charAt(0).toUpperCase()+GIORNI[dateObj.getDay()].slice(1)+
+    (dayL.length? " · "+dayL.length+" lezion"+(dayL.length>1?"i":"e")+" · "+eur(tot) : " · nessuna lezione");
+
+  const body=$("sheetBody");
+  if(!dayL.length){
+    body.innerHTML=`<div class="empty"><div class="ico">🎾</div><p>Giornata libera.<br>Tocca <b>Aggiungi lezione</b> per segnarne una.</p></div>`;
+  }else{
+    body.innerHTML=dayL.map(l=>lessonRowHtml(l)).join("");
+    bindLessonRows(body);
+  }
+  $("sheetAdd").onclick=()=>openModal(null, ds);
+}
+
+/* riga lezione riusabile */
+function lessonRowHtml(l, showDate=false){
+  const dur=l.durata||60;
+  const endMin = toMin(l.ora)+ (+dur);
+  const end = pad(Math.floor(endMin/60)%24)+":"+pad(endMin%60);
+  let dateBadge="";
+  if(showDate){
+    const [yy,mm,dd]=l.data.split("-");
+    dateBadge=`<small>${+dd} ${MESI_BR[+mm-1]}</small>`;
+  }
+  return `<div class="lesson" data-id="${l.id}" data-act="edit">
+    <div class="time">${l.ora}${showDate?dateBadge:`<small>${end}</small>`}</div>
+    <div class="info">
+      <div class="name">${escapeHtml(l.allievo||"Senza nome")}</div>
+      <div class="meta">${dur} min · ${eur(+l.prezzo||0)}</div>
+      ${l.note?`<div class="note">${escapeHtml(l.note)}</div>`:""}
+    </div>
+    <button class="pay-pill ${l.pagato?"yes":"no"}" data-id="${l.id}" data-act="pay">${l.pagato?"Pagata":"Da pagare"}</button>
+  </div>`;
+}
+function bindLessonRows(container){
+  container.querySelectorAll('[data-act="pay"]').forEach(b=>{
+    b.onclick=e=>{ e.stopPropagation(); togglePaid(b.dataset.id); };
+  });
+  container.querySelectorAll('[data-act="edit"]').forEach(row=>{
+    row.onclick=()=>openModal(row.dataset.id);
+  });
+}
+function toMin(t){const[a,b]=(t||"0:0").split(":").map(Number);return a*60+b;}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
+function togglePaid(id){
+  const l=lezioni.find(x=>x.id===id); if(!l) return;
+  db.collection("lezioni").doc(id).update({pagato:!l.pagato})
+    .then(()=>toast(!l.pagato?"Segnata come pagata ✓":"Segnata da pagare"))
+    .catch(()=>toast("Errore, riprova"));
+}
+
+/* =================================================================
+   PAGAMENTI
+   ================================================================= */
+document.querySelectorAll(".seg button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll(".seg button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); payFilter=b.dataset.pf; renderPayments();
+  };
+});
+
+function renderPayments(){
+  const unpaid=lezioni.filter(l=>!l.pagato);
+  const outstanding=unpaid.reduce((s,l)=>s+(+l.prezzo||0),0);
+  $("payOutstanding").textContent=eur(outstanding);
+  $("payOutSub").textContent = unpaid.length
+    ? unpaid.length+" lezion"+(unpaid.length>1?"i":"e")+" da saldare"
+    : "Tutto in regola, niente in sospeso ✓";
+
+  let list = payFilter==="no" ? lezioni.filter(l=>!l.pagato)
+           : payFilter==="yes"? lezioni.filter(l=>l.pagato)
+           : lezioni.slice();
+  // più recenti in alto
+  list.sort((a,b)=> (b.data+b.ora).localeCompare(a.data+a.ora));
+
+  const cont=$("payList");
+  if(!list.length){
+    const msg = payFilter==="no" ? "Nessuna lezione da pagare. Ottimo lavoro! 🎾"
+              : payFilter==="yes"? "Ancora nessuna lezione pagata."
+              : "Nessuna lezione registrata.";
+    cont.innerHTML=`<div class="empty"><div class="ico">💸</div><p>${msg}</p></div>`;
+    return;
+  }
+  // raggruppa per mese
+  let html=""; let curKey="";
+  list.forEach(l=>{
+    const [yy,mm]=l.data.split("-");
+    const key=yy+"-"+mm;
+    if(key!==curKey){
+      curKey=key;
+      html+=`<div class="pay-group-title">${MESI[+mm-1]} ${yy}</div>`;
+    }
+    html+=lessonRowHtml(l,true);
+  });
+  cont.innerHTML=html;
+  bindLessonRows(cont);
+}
+
+/* =================================================================
+   RESOCONTO
+   ================================================================= */
+$("recPrev").onclick=()=>{ recRef.setMonth(recRef.getMonth()-1); renderRecap(); };
+$("recNext").onclick=()=>{ recRef.setMonth(recRef.getMonth()+1); renderRecap(); };
+
+function monthLessons(ref){
+  const y=ref.getFullYear(), m=ref.getMonth();
+  const key=y+"-"+pad(m+1);
+  return lezioni.filter(l=>l.data.startsWith(key));
+}
+
+function renderRecap(){
+  $("recMonth").textContent=MESI[recRef.getMonth()]+" "+recRef.getFullYear();
+  const ml=monthLessons(recRef);
+  const totale=ml.reduce((s,l)=>s+(+l.prezzo||0),0);
+  const incassato=ml.filter(l=>l.pagato).reduce((s,l)=>s+(+l.prezzo||0),0);
+  const daIncassare=totale-incassato;
+  const daPagareN=ml.filter(l=>!l.pagato).length;
+  const ore=ml.reduce((s,l)=>s+(+l.durata||60),0)/60;
+  const allievi=new Set(ml.map(l=>(l.allievo||"").trim().toLowerCase()).filter(Boolean)).size;
+  const media=ml.length? totale/ml.length : 0;
+
+  $("recIncassato").textContent=eurNum(incassato);
+  $("recTotale").textContent=eur(totale);
+  $("recLezioni").textContent=ml.length;
+  $("recOre").textContent=Number.isInteger(ore)?ore:ore.toFixed(1).replace(".",",");
+  $("recDaIncassare").textContent=eurNum(daIncassare);
+  $("recDaPagareN").textContent=daPagareN;
+  $("recMedia").textContent=eurNum(media);
+  $("recAllievi").textContent=allievi;
+
+  renderBars();
+  renderStudents(ml);
+}
+
+function renderBars(){
+  const cont=$("recBars"); cont.innerHTML="";
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(recRef.getFullYear(),recRef.getMonth()-i,1);
+    months.push(d);
+  }
+  const vals=months.map(d=>{
+    const key=d.getFullYear()+"-"+pad(d.getMonth()+1);
+    return lezioni.filter(l=>l.data.startsWith(key)).reduce((s,l)=>s+(+l.prezzo||0),0);
+  });
+  const max=Math.max(...vals,1);
+  months.forEach((d,i)=>{
+    const isCur = d.getMonth()===recRef.getMonth() && d.getFullYear()===recRef.getFullYear();
+    const h=Math.max(3, (vals[i]/max)*100);
+    const col=document.createElement("div");
+    col.className="bar-col";
+    col.innerHTML=`
+      <div class="bar-val">${vals[i]?eur(vals[i]):""}</div>
+      <div class="bar-track"><div class="bar ${isCur?"cur":""}" style="height:${h}%"></div></div>
+      <div class="bar-lab">${MESI_BR[d.getMonth()]}</div>`;
+    cont.appendChild(col);
+  });
+}
+
+function renderStudents(ml){
+  const card=$("recStudentsCard");
+  const map={};
+  ml.forEach(l=>{
+    const name=(l.allievo||"Senza nome").trim();
+    if(!map[name]) map[name]={n:0,tot:0};
+    map[name].n++; map[name].tot+=(+l.prezzo||0);
+  });
+  const arr=Object.entries(map).sort((a,b)=>b[1].tot-a[1].tot);
+  if(!arr.length){ card.style.display="none"; return; }
+  card.style.display="block";
+  $("recStudents").innerHTML=arr.map(([name,v])=>{
+    const initials=name.split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase()||"?";
+    return `<div class="student-row">
+      <div class="av">${escapeHtml(initials)}</div>
+      <div style="flex:1">
+        <div class="sname">${escapeHtml(name)}</div>
+        <div class="scnt">${v.n} lezion${v.n>1?"i":"e"}</div>
+      </div>
+      <div class="stot tnum">${eur(v.tot)}</div>
+    </div>`;
+  }).join("");
+}
+
+/* =================================================================
+   MODALE LEZIONE (crea / modifica)
+   ================================================================= */
+function refreshStudentList(){
+  const names=[...new Set(lezioni.map(l=>(l.allievo||"").trim()).filter(Boolean))].sort();
+  $("studentList").innerHTML=names.map(n=>`<option value="${escapeHtml(n)}">`).join("");
+}
+
+function setModalPaid(v){
+  modalPaid=v;
+  $("paidSwitch").classList.toggle("on",v);
+  $("paidLabel").textContent=v?"Pagata":"Da pagare";
+}
+$("paidToggle").onclick=()=>setModalPaid(!modalPaid);
+
+function openModal(id, presetDate){
+  editingId=id;
+  const recRow=$("recurringRow");
+  if(id){
+    const l=lezioni.find(x=>x.id===id);
+    $("modalTitle").textContent="Modifica lezione";
+    $("fAllievo").value=l.allievo||"";
+    $("fData").value=l.data;
+    $("fOra").value=l.ora||"17:00";
+    $("fPrezzo").value=l.prezzo??"";
+    $("fDurata").value=l.durata??60;
+    $("fNote").value=l.note||"";
+    setModalPaid(!!l.pagato);
+    $("modalDelete").classList.remove("hidden");
+    recRow.classList.add("hidden");
+    $("fRicorrente").checked=false;
+  }else{
+    $("modalTitle").textContent="Nuova lezione";
+    $("fAllievo").value="";
+    $("fData").value=presetDate || ymd(new Date());
+    $("fOra").value="17:00";
+    $("fPrezzo").value=config.prezzoDefault ?? 35;
+    $("fDurata").value=config.durataDefault ?? 60;
+    $("fNote").value="";
+    setModalPaid(false);
+    $("modalDelete").classList.add("hidden");
+    recRow.classList.remove("hidden");
+    $("fRicorrente").checked=false;
+  }
+  $("modalBack").classList.add("show");
+  setTimeout(()=>$("fAllievo").focus(),250);
+}
+function closeModal(){ $("modalBack").classList.remove("show"); editingId=null; }
+$("modalClose").onclick=closeModal;
+$("fab").onclick=()=>{
+  const presetDate = (selDay && $("daySheet").classList.contains("show")) ? selDay : ymd(new Date());
+  openModal(null, presetDate);
+};
+$("modalBack").addEventListener("click",e=>{ if(e.target===$("modalBack")) closeModal(); });
+
+$("modalSave").onclick=()=>{
+  const allievo=$("fAllievo").value.trim();
+  const data=$("fData").value;
+  const ora=$("fOra").value;
+  const prezzo=parseFloat($("fPrezzo").value)||0;
+  const durata=parseInt($("fDurata").value)||60;
+  const note=$("fNote").value.trim();
+  if(!allievo){ toast("Inserisci il nome dell'allievo"); $("fAllievo").focus(); return; }
+  if(!data){ toast("Scegli una data"); return; }
+  if(!ora){ toast("Scegli un orario"); return; }
+
+  const base={allievo,data,ora,prezzo,durata,note,pagato:modalPaid};
+  const btn=$("modalSave"); btn.disabled=true; btn.textContent="Salvataggio…";
+
+  if(editingId){
+    db.collection("lezioni").doc(editingId).update(base)
+      .then(()=>{ toast("Lezione aggiornata ✓"); closeModal(); })
+      .catch(()=>toast("Errore nel salvataggio"))
+      .finally(()=>{ btn.disabled=false; btn.textContent="Salva lezione"; });
+  }else{
+    const ricorrente=$("fRicorrente").checked;
+    const nRip = ricorrente ? parseInt($("fRicorrenteN").value) : 1;
+    const batch=db.batch();
+    const [yy,mm,dd]=data.split("-").map(Number);
+    for(let w=0; w<nRip; w++){
+      const d=new Date(yy,mm-1,dd+7*w);
+      const ref=db.collection("lezioni").doc();
+      batch.set(ref, Object.assign({}, base, {data:ymd(d), creato:firebase.firestore.FieldValue.serverTimestamp()}));
+    }
+    batch.commit()
+      .then(()=>{ toast(nRip>1?nRip+" lezioni aggiunte ✓":"Lezione aggiunta ✓"); closeModal(); })
+      .catch(()=>toast("Errore nel salvataggio"))
+      .finally(()=>{ btn.disabled=false; btn.textContent="Salva lezione"; });
+  }
+};
+
+$("modalDelete").onclick=()=>{
+  if(!editingId) return;
+  if(!confirm("Eliminare questa lezione?")) return;
+  db.collection("lezioni").doc(editingId).delete()
+    .then(()=>{ toast("Lezione eliminata"); closeModal(); })
+    .catch(()=>toast("Errore, riprova"));
+};
+
+/* =================================================================
+   IMPOSTAZIONI
+   ================================================================= */
+$("saveProfile").onclick=()=>{
+  const nomeCoach=$("setCoach").value.trim()||"Coach";
+  const prezzoDefault=parseFloat($("setPrice").value)||0;
+  const durataDefault=parseInt($("setDur").value)||60;
+  const msg=$("profileMsg"); msg.className="set-msg";
+  db.collection("impostazioni").doc("generali").set({nomeCoach,prezzoDefault,durataDefault},{merge:true})
+    .then(()=>{ msg.textContent="Profilo salvato ✓"; msg.classList.add("ok"); setTimeout(()=>msg.textContent="",2500); })
+    .catch(()=>{ msg.textContent="Errore nel salvataggio"; msg.classList.add("err"); });
+};
+
+$("changePw").onclick=()=>{
+  const cur=$("curPw").value, np=$("newPw").value;
+  const msg=$("pwMsg"); msg.className="set-msg";
+  if(np.length<6){ msg.textContent="La nuova password deve avere almeno 6 caratteri"; msg.classList.add("err"); return; }
+  const user=auth.currentUser;
+  const cred=firebase.auth.EmailAuthProvider.credential(COACH_EMAIL, cur);
+  const btn=$("changePw"); btn.disabled=true; btn.textContent="Aggiornamento…";
+  user.reauthenticateWithCredential(cred)
+    .then(()=>user.updatePassword(np))
+    .then(()=>{
+      msg.textContent="Password aggiornata ✓"; msg.classList.add("ok");
+      $("curPw").value=""; $("newPw").value="";
+      setTimeout(()=>msg.textContent="",2800);
+    })
+    .catch(err=>{
+      if(err.code==="auth/wrong-password"||err.code==="auth/invalid-credential")
+        msg.textContent="Password attuale errata";
+      else msg.textContent="Errore: "+err.message;
+      msg.classList.add("err");
+    })
+    .finally(()=>{ btn.disabled=false; btn.textContent="Aggiorna password"; });
+};
+
+$("logout").onclick=()=>{
+  if(confirm("Vuoi uscire dall'account?")){
+    auth.signOut();
+    dataStarted=false;
+  }
+};
+</script>
+</body>
+</html>
